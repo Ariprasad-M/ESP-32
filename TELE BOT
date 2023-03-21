@@ -1,0 +1,175 @@
+/*******************************************************************
+ Control LED by Telegram and ESP 32
+ *  by ARIPRASAD MSD                                      *
+ *******************************************************************/
+#ifdef ESP32
+#include <WiFi.h>
+#else
+#include <ESP8266WiFi.h>
+#endif
+#include <WiFiClientSecure.h>
+#include <UniversalTelegramBot.h>   // Universal Telegram Bot Library written by Brian Lough: https://github.com/witnessmenow/Universal-Arduino-Telegram-Bot
+#include <ArduinoJson.h>
+
+
+
+#include <UniversalTelegramBot.h>
+#include <ArduinoJson.h>
+// Initialize Wifi connection to the router
+char ssid[] = "XXXXXXXXXX";     // your network SSID (name)
+char password[] = "XXXXXXXXXX"; // your network key
+
+// Initialize Telegram BOT
+#define TELEGRAM_BOT_TOKEN "XXXXXXXXXXXXXXXXXXX"  // your Bot Token 
+
+WiFiClientSecure client;
+UniversalTelegramBot bot(TELEGRAM_BOT_TOKEN, client);
+
+#define LED_PIN 2
+#define LED2_PIN 4
+#define LED3_PIN 18
+#define LED4_PIN 19
+int delayBetweenChecks = 1000; //mean time between scan messages
+unsigned long lastTimeChecked;   //last time messages' scan has been done
+ 
+bool Start = false;
+
+int ledStatus = 0;
+
+void setup() {
+  Serial.begin(115200);
+  
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect();
+  delay(100);
+  pinMode(2, OUTPUT);
+  digitalWrite(2, LOW);
+  pinMode(4, OUTPUT);
+  digitalWrite(4, LOW);
+  pinMode(18, OUTPUT);
+  digitalWrite(18, LOW);
+  pinMode(19, OUTPUT);
+  digitalWrite(19, LOW);
+  delay(100);
+  // Attempt to connect to Wifi network:
+  Serial.print("Connecting Wifi: ");
+  Serial.println(ssid);
+
+  // Set WiFi to station mode and disconnect from an AP if it was Previously
+  // connected
+ // WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    delay(500);
+  }
+
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+  
+   client.setInsecure();
+  pinMode(LED_PIN, OUTPUT); // initialize digital ledPin as an output.
+  delay(10);
+  digitalWrite(LED_PIN, LOW); // initialize pin as off
+}
+
+void handleNewMessages(int numNewMessages) {
+  Serial.println("Ariprasad_NodeMcu:Message");
+  Serial.println(String(numNewMessages));
+
+  for (int i=0; i<numNewMessages; i++) {
+    String chat_id = String(bot.messages[i].chat_id);
+    String text = bot.messages[i].text;
+
+    String from_name = bot.messages[i].from_name;
+    if (from_name == "") from_name = "Ariprasad";
+
+    if (text == "/ledon1") {
+      digitalWrite(LED_PIN, HIGH);   // turn the LED on (HIGH is the voltage level)
+      ledStatus = 1;
+      bot.sendMessage(chat_id, "Led1 is ON", "");
+    }
+
+    if (text == "/ledon2") {
+      digitalWrite(LED2_PIN, HIGH);   // turn the LED on (HIGH is the voltage level)
+      ledStatus = 1;
+      bot.sendMessage(chat_id, "Led2 is ON", "");
+    }
+
+    if (text == "/ledon3") {
+      digitalWrite(LED3_PIN, HIGH);   // turn the LED on (HIGH is the voltage level)
+      ledStatus = 1;
+      bot.sendMessage(chat_id, "Led3 is ON", "");
+    }
+
+    if (text == "/ledon4") {
+      digitalWrite(LED4_PIN, HIGH);   // turn the LED on (HIGH is the voltage level)
+      ledStatus = 1;
+      bot.sendMessage(chat_id, "Led4 is ON", "");
+    }
+    
+    if (text == "/ledoff1") {
+      ledStatus = 0;
+      digitalWrite(LED_PIN, LOW);    // turn the LED off (LOW is the voltage level)
+      bot.sendMessage(chat_id, "Led1 is OFF", "");
+    }
+if (text == "/ledoff2") {
+      ledStatus = 0;
+      digitalWrite(LED2_PIN, LOW);    // turn the LED off (LOW is the voltage level)
+      bot.sendMessage(chat_id, "Led2 is OFF", "");
+    }
+    if (text == "/status") {
+      if(ledStatus){
+        bot.sendMessage(chat_id, "Led1 is ON", "");
+      } else {
+        bot.sendMessage(chat_id, "Led1 is OFF", "");
+      }
+    }
+     if (text == "/ledoff3") {
+      ledStatus = 0;
+      digitalWrite(LED3_PIN, LOW);    // turn the LED off (LOW is the voltage level)
+      bot.sendMessage(chat_id, "Led3 is OFF", "");
+    }
+    if (text == "/ledoff4") {
+      ledStatus = 0;
+      digitalWrite(LED4_PIN, LOW);    // turn the LED off (LOW is the voltage level)
+      bot.sendMessage(chat_id, "Led4 is OFF", "");
+    }
+
+
+    if (text == "/start") {
+      String welcome = "Welcome to Universal Arduino Telegram Bot library, " + from_name + ".\n\n";
+      welcome += "This is Flash Led Bot example.\n\n";
+      welcome += "/ledon1 : to switch the Led1 ON\n";
+      welcome += "/ledoff1 : to switch the Led1 OFF\n";
+       welcome += "/ledon2 : to switch the Led2 ON\n";
+      welcome += "/ledoff2 : to switch the Led2 OFF\n";
+     // welcome += "/status : Returns current status of LED\n";
+       welcome += "/ledon3 : to switch the Led1 ON\n";
+      welcome += "/ledoff3 : to switch the Led1 OFF\n";
+       welcome += "/ledon4 : to switch the Led1 ON\n";
+      welcome += "/ledoff4 : to switch the Led1 OFF\n";
+       welcome += "/status : Returns current status of LED\n";
+      bot.sendMessage(chat_id, welcome, "Markdown");
+    }
+  }
+}
+
+
+
+void loop() {
+  if (millis() > lastTimeChecked +delayBetweenChecks)  {
+    int numNewMessages = bot.getUpdates(bot.last_message_received + 1);
+
+    while(numNewMessages) {
+      Serial.println("reponse:");
+      handleNewMessages(numNewMessages);
+      numNewMessages = bot.getUpdates(bot.last_message_received + 1);
+    }
+
+    lastTimeChecked = millis();
+  }
+}
